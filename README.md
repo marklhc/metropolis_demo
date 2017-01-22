@@ -1,5 +1,5 @@
 # metropolis_demo
 
 ```
-shiny::runGitHub("condprob", "marklhc")
+shiny::runGitHub("metropolis_demo", "marklhc")
 ```
