@@ -15,15 +15,25 @@ ui <- fluidPage(
   
   # Application title
   titlePanel("Metropolis Algorithm"),
-  
+  wellPanel(
+    p("This app illustrates the process of sampling from the posterior 
+      distribution using the Metropolis algorithm."), 
+    h2("Instruction:"), 
+    p("0. Choose a desired standard deviation for the proposal distribution."), 
+    p("1. Click the 'Initialize' button to start a new sampling."), 
+    p("2a. Click 'Propose a value' to obtain a new value from the proposal distribution."), 
+    p("2b. Click 'Accept/Reject' to probabilitistically decide whether to accept or reject the proposed value."), 
+    p("3. To simulate more samples, click the 'Draw 100 samples' or the 'Draw 100 samples' button.")
+  ), 
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
-      sliderInput("sd", "Proposal SD", 0.05, 0.5, value = 0.3),
+      sliderInput("sd", "Proposal SD", 0.05, 0.5, value = 0.1),
       actionButton("init", "Initialize"), 
       actionButton("prop", "Propose a value"), 
       actionButton("acc", "Accept/Reject"), 
       actionButton("run100", "Draw 100 samples"), 
+      actionButton("run1000", "Draw 1000 samples"), 
       textOutput("nsample"), 
       textOutput("acc_rate")
     ),
@@ -59,6 +69,9 @@ server <- function(input, output) {
   observeEvent(input$prop, {
     if (!is.null(v$th0)) {
       v$proposed <- rnorm(1, sd = input$sd) + v$th0
+      while (v$proposed > 1 | v$proposed < 0) {
+        v$proposed <- rnorm(1, sd = input$sd) + v$th0
+      }
     }
   })
   observeEvent(input$acc, {
@@ -74,11 +87,13 @@ server <- function(input, output) {
   })
   observeEvent(input$run100, {
     if (!is.null(v$th0)) {
-      proposed_jump <- rnorm(100, sd = input$sd)
       sam_mcmc <- rep(NA, length = 101)
       sam_mcmc[1] <- v$th0
       for (i in 1:100) {
-        proposed <- sam_mcmc[i] + proposed_jump[i]
+        proposed <- sam_mcmc[i] + rnorm(1, sd = input$sd)
+        while (proposed > 1 | proposed < 0) {
+          proposed <- sam_mcmc[i] + rnorm(1, sd = input$sd)
+        }
         if (runif(1) < dens_kern(proposed) / dens_kern(sam_mcmc[i])) {
           sam_mcmc[i + 1] <- proposed
           v$accept <- v$accept + 1
@@ -88,6 +103,27 @@ server <- function(input, output) {
       }
       v$th0 <- sam_mcmc[101]
       v$sam <- c(v$sam, sam_mcmc[2:101])
+      v$proposed <- NULL
+    }
+  })
+  observeEvent(input$run1000, {
+    if (!is.null(v$th0)) {
+      sam_mcmc <- rep(NA, length = 1001)
+      sam_mcmc[1] <- v$th0
+      for (i in 1:1000) {
+        proposed <- sam_mcmc[i] + rnorm(1, sd = input$sd)
+        while (proposed > 1 | proposed < 0) {
+          proposed <- sam_mcmc[i] + rnorm(1, sd = input$sd)
+        }
+        if (runif(1) < dens_kern(proposed) / dens_kern(sam_mcmc[i])) {
+          sam_mcmc[i + 1] <- proposed
+          v$accept <- v$accept + 1
+        } else {
+          sam_mcmc[i + 1] <- sam_mcmc[i]
+        }
+      }
+      v$th0 <- sam_mcmc[1001]
+      v$sam <- c(v$sam, sam_mcmc[2:1001])
       v$proposed <- NULL
     }
   })
@@ -104,11 +140,15 @@ server <- function(input, output) {
               col = rgb(0.8, 1, 1, 0.2), border = NA)
       points(v$th0, 0, pch = 19, col = "skyblue3")
       segments(v$th0, 0, y1 = dens_kern(v$th0), col = "blue")
+      text(0, 2, bquote("Current value" == .(round(v$th0, 2))), pos = 4, 
+           col = "skyblue3")
       if (!is.null(v$proposed)) {
         proposed <- v$proposed
         segments(proposed, 0, y1 = dens_kern(proposed), col = "red")
         points(proposed, 0, pch = 19, col = "red")
-        text(0, 2, bquote(italic(P)(Accept) == 
+        text(0, 1.75, bquote("Proposed value" == .(round(v$proposed, 2))), 
+             pos = 4, col = "red")
+        text(0, 1.5, bquote(italic(P)(Accept) == 
                             .(round(min(dens_kern(v$proposed) / 
                                           dens_kern(v$th0), 1), 3) * 100) ~ "%"), 
              pos = 4)
@@ -117,7 +157,7 @@ server <- function(input, output) {
   })
   output$SamplePlot <- renderPlot({
     if (!is.null(v$sam)) {
-      hist(v$sam, col = "skyblue3", xlab = expression(theta), 
+      hist(v$sam, col = "lightblue1", xlab = expression(theta), 
            xlim = c(0, 1), main = "Sampled Values", freq = FALSE)
       if (length(v$sam) > 10) {
         lines(density(v$sam, bw = "SJ"), col = "blue")
