@@ -69,9 +69,6 @@ server <- function(input, output) {
   observeEvent(input$prop, {
     if (!is.null(v$th0)) {
       v$proposed <- rnorm(1, sd = input$sd) + v$th0
-      while (v$proposed > 1 | v$proposed < 0) {
-        v$proposed <- rnorm(1, sd = input$sd) + v$th0
-      }
     }
   })
   observeEvent(input$acc, {
@@ -91,8 +88,9 @@ server <- function(input, output) {
       sam_mcmc[1] <- v$th0
       for (i in 1:100) {
         proposed <- sam_mcmc[i] + rnorm(1, sd = input$sd)
-        while (proposed > 1 | proposed < 0) {
-          proposed <- sam_mcmc[i] + rnorm(1, sd = input$sd)
+        if (proposed > 1 | proposed < 0) {
+          sam_mcmc[i + 1] <- sam_mcmc[i]
+          next
         }
         if (runif(1) < dens_kern(proposed) / dens_kern(sam_mcmc[i])) {
           sam_mcmc[i + 1] <- proposed
@@ -112,8 +110,9 @@ server <- function(input, output) {
       sam_mcmc[1] <- v$th0
       for (i in 1:1000) {
         proposed <- sam_mcmc[i] + rnorm(1, sd = input$sd)
-        while (proposed > 1 | proposed < 0) {
-          proposed <- sam_mcmc[i] + rnorm(1, sd = input$sd)
+        if (proposed > 1 | proposed < 0) {
+          sam_mcmc[i + 1] <- sam_mcmc[i]
+          next
         }
         if (runif(1) < dens_kern(proposed) / dens_kern(sam_mcmc[i])) {
           sam_mcmc[i + 1] <- proposed
