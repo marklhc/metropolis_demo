@@ -28,7 +28,7 @@ ui <- fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
-      sliderInput("sd", "Proposal SD", 0.05, 0.5, value = 0.1),
+      sliderInput("sd", "Proposal SD", 0.01, 1, value = 0.1),
       actionButton("init", "Initialize"), 
       actionButton("prop", "Propose a value"), 
       actionButton("acc", "Accept/Reject"), 
@@ -59,16 +59,18 @@ server <- function(input, output) {
   }
   x0 <- seq(-0.3, 0.3, length.out = 101)
   v <- reactiveValues(th0 = NULL, proposed = NULL, sam = NULL, 
-                      accept = 0)
+                      accept = 0, rug = FALSE)
   observeEvent(input$init, {
     v$th0 <- runif(1)
     v$proposed <- NULL
     v$sam <- NULL
     v$accept <- 0
+    v$rug <- FALSE
   })
   observeEvent(input$prop, {
     if (!is.null(v$th0)) {
       v$proposed <- rnorm(1, sd = input$sd) + v$th0
+      v$rug <- FALSE
     }
   })
   observeEvent(input$acc, {
@@ -102,6 +104,7 @@ server <- function(input, output) {
       v$th0 <- sam_mcmc[101]
       v$sam <- c(v$sam, sam_mcmc[2:101])
       v$proposed <- NULL
+      v$rug <- TRUE
     }
   })
   observeEvent(input$run1000, {
@@ -124,6 +127,7 @@ server <- function(input, output) {
       v$th0 <- sam_mcmc[1001]
       v$sam <- c(v$sam, sam_mcmc[2:1001])
       v$proposed <- NULL
+      v$rug <- TRUE
     }
   })
   output$TargetPlot <- renderPlot({
@@ -151,6 +155,9 @@ server <- function(input, output) {
                             .(round(min(dens_kern(v$proposed) / 
                                           dens_kern(v$th0), 1), 3) * 100) ~ "%"), 
              pos = 4)
+      }
+      if (v$rug) {
+        rug(v$sam[(-99):0 + length(v$sam)])
       }
     }
   })
