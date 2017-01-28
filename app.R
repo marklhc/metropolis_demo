@@ -30,7 +30,7 @@ ui <- fluidPage(
     sidebarPanel(
       sliderInput("sd", "Proposal SD", 0.01, 1, value = 0.1),
       actionButton("init", "Initialize"), 
-      actionButton("prop", "Propose a value"), 
+      actionButton("prop", "Propose a theta value"), 
       actionButton("acc", "Accept/Reject"), 
       actionButton("run100", "Draw 100 samples"), 
       actionButton("run1000", "Draw 1000 samples"), 
