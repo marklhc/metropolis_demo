@@ -23,7 +23,7 @@ ui <- fluidPage(
     p("1. Click the 'Initialize' button to start a new sampling."), 
     p("2a. Click 'Propose a value' to obtain a new value from the proposal distribution."), 
     p("2b. Click 'Accept/Reject' to probabilitistically decide whether to accept or reject the proposed value."), 
-    p("3. To simulate more samples, click the 'Draw 100 samples' or the 'Draw 100 samples' button.")
+    p("3. To simulate more samples, click the 'Draw 100 samples' or the 'Draw 1000 samples' buttons.")
   ), 
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
@@ -46,7 +46,8 @@ ui <- fluidPage(
                  plotOutput("SamplePlot")), 
         tabPanel("Trace", 
                  plotOutput("TracePlot"), 
-                 plotOutput("AcfPlot"))
+                 plotOutput("AcfPlot"), 
+                 textOutput("ess"))
       )
     )
   )
@@ -185,6 +186,12 @@ server <- function(input, output) {
   })
   output$acc_rate <- renderText({ 
     paste("Acceptance rate:", round(v$accept / length(v$sam), 2))
+  })
+  output$ess <- renderText({
+    paste("Effective sample size:",
+          ifelse(length(v$sam) <= 2, length(v$sam),
+                 round(length(v$sam) * var(v$sam) / 
+                         spec.ar(v$sam, plot = FALSE)$spec[1], 2)))
   })
 }
 
