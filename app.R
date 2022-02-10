@@ -164,7 +164,8 @@ server <- function(input, output) {
   })
   output$SamplePlot <- renderPlot({
     if (!is.null(v$sam)) {
-      hist(v$sam, col = "lightblue1", xlab = expression(theta), 
+      hist(v$sam, breaks = "Scott",
+           col = "lightblue1", xlab = expression(theta), 
            xlim = c(0, 1), main = "Sampled Values", freq = FALSE)
       if (length(v$sam) > 10) {
         lines(density(v$sam, bw = "SJ"), col = "blue")
